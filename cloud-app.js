@@ -93,5 +93,15 @@ async function uploadPhoto(){if(!draft||uploading||!me||me.role==='manager')retu
 async function viewPhoto(id){const r=records.find(r=>r.id===id);if(!r)return;$('#photo-dialog')?.remove();const dialog=document.createElement('dialog');dialog.id='photo-dialog';dialog.innerHTML=`<div class="section-head"><h3>${esc(r.employee_name)} · ${esc(r.point_name)}</h3><button id="close-photo">关闭</button></div><p class="muted">${esc(chinaTime(r.uploaded_at))} 接收 · ${r.shift} 第 ${r.round_no} 轮</p><div id="photo-body" class="empty">正在读取私有照片…</div><button id="download-photo" class="primary" disabled>下载 JPG 照片</button>`;document.body.append(dialog);dialog.showModal();$('#close-photo').onclick=()=>dialog.close();try{const url=await api.photoURL(r.photo_path);if(!dialog.open)return;$('#photo-body').className='';$('#photo-body').innerHTML=`<img class="cloud-photo" src="${esc(url)}" alt="${esc(r.point_name)}">`;$('#download-photo').disabled=false;$('#download-photo').onclick=async()=>{try{const fresh=await api.photoURL(r.photo_path),res=await fetch(fresh);if(!res.ok)throw new Error('照片下载失败');download(await res.blob(),(r.work_date+'_'+r.employee_name+'_'+r.point_name+'_'+r.id.slice(0,8)).replace(/[\\/:*?"<>|]/g,'_')+'.jpg')}catch(e){fatal(e)}}}catch(e){$('#photo-body').textContent=errorText(e)}}
 $('#role').onclick=async()=>{if(batchBusy)return toast('照片打包中，请先完成或取消下载');if(uploading)return toast('照片提交中，请稍候');revision++;try{await api.logout()}catch{}me=null;records=[];points=[];people=[];draft=null;showLogin()};
 window.addEventListener('beforeunload',e=>{if(uploading||draft||batchBusy||(typeof pointDeleteBusy!=='undefined'&&pointDeleteBusy)){e.preventDefault();e.returnValue=''}});
-showLogin();if(api.session){api.profile().then(p=>{portal=p.role==='manager'?'manager':'worker';return startSession()}).catch(e=>{me=null;api.save(null);showLogin(errorText(e))})}
+function showSessionResume(message=''){
+ showLogin();const el=$('#entrance');el.innerHTML=`<div class="entry-wrap credential-wrap"><div class="entry-brand company-entry-brand"><img class="company-logo-image" src="assets/zhenru-company-logo.png?v=1" alt="真如物业"></div><section class="card"><h2>${message?'暂时无法恢复登录':'正在恢复登录…'}</h2><p class="muted">${message?esc(message):'正在验证账号并读取工作台，请稍候。'}</p>${message?'<div class="buttons"><button id="retry-session-resume" class="primary">重试进入工作台</button><button id="switch-session-account">退出并更换账号</button></div>':''}</section></div>`;
+ if(message){$('#retry-session-resume').onclick=restoreCloudSession;$('#switch-session-account').onclick=async()=>{try{await api.logout()}catch{}me=null;showLogin()}}
+}
+async function restoreCloudSession(){
+ if(!api.session){showLogin();return}showSessionResume();
+ try{const profile=await api.profile();portal=profile.role==='manager'?'manager':'worker';await startSession()}
+ catch(e){me=null;if(api.session)showSessionResume(errorText(e));else showLogin('登录已失效，请重新登录。')}
+}
+if(api.session)restoreCloudSession();else showLogin();
+
 

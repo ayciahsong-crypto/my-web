@@ -1,8 +1,9 @@
 'use strict';
 const HUB_BACKEND = Object.freeze({url:'https://byvywuwfxxioyllssgwi.supabase.co',key:'sb_publishable_0UEn7xF01LGlKsRyb0mZjg_W-6L3kAH'});
 class HubAPI {
- constructor(){this.session=null;this.refreshing=null;try{this.session=JSON.parse(sessionStorage.getItem('hub-cloud-session'))}catch{}}
- save(session){this.session=session;if(session)sessionStorage.setItem('hub-cloud-session',JSON.stringify(session));else sessionStorage.removeItem('hub-cloud-session')}
+constructor(){this.session=null;this.refreshing=null;this.session=this.readSession();if(this.session)this.save(this.session)}
+ readSession(){for(const storage of ['localStorage','sessionStorage']){try{const s=JSON.parse(globalThis[storage]?.getItem('hub-cloud-session')||'null');if(s&&typeof s.access_token==='string'&&s.access_token&&typeof s.refresh_token==='string'&&s.refresh_token)return s}catch{}}return null}
+ save(session){this.session=session;if(session){let persisted=false;try{localStorage.setItem('hub-cloud-session',JSON.stringify(session));persisted=true}catch{}try{if(persisted)sessionStorage.removeItem('hub-cloud-session');else sessionStorage.setItem('hub-cloud-session',JSON.stringify(session))}catch{}}else{for(const storage of ['localStorage','sessionStorage']){try{globalThis[storage]?.removeItem('hub-cloud-session')}catch{}}}}
  async raw(path,{method='GET',body,headers={},token,signal}={}){
   const h={apikey:HUB_BACKEND.key,...headers};if(token)h.Authorization='Bearer '+token;
   let data=body;if(body!==undefined&&!(body instanceof Blob)){h['Content-Type']='application/json';data=JSON.stringify(body)}
@@ -10,7 +11,7 @@ class HubAPI {
   const text=await response.text();let result;try{result=text?JSON.parse(text):null}catch{result=text}
   if(!response.ok){const err=new Error(result?.message||result?.msg||result?.error_description||result?.error||'后台请求失败');err.status=response.status;err.code=result?.code;throw err}return result;
  }
- async refresh(){if(!this.session?.refresh_token)throw new Error('登录已过期，请重新登录');if(!this.refreshing)this.refreshing=this.raw('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:this.session.refresh_token}}).then(s=>{this.save(s);return s}).catch(e=>{this.save(null);throw e}).finally(()=>this.refreshing=null);return this.refreshing}
+ async refresh(){if(!this.session?.refresh_token)throw new Error('登录已过期，请重新登录');if(!this.refreshing){const initialToken=this.session.refresh_token;const renew=async()=>{const saved=this.readSession();if(!saved){this.save(null);throw new Error('登录已退出，请重新登录')}if(saved.refresh_token!==initialToken&&saved.expires_at*1000>Date.now()+60000){this.session=saved;return saved}this.session=saved;try{const s=await this.raw('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:this.session.refresh_token}});this.save(s);return s}catch(e){if([400,401,403].includes(e.status))this.save(null);throw e}};this.refreshing=(globalThis.navigator?.locks?globalThis.navigator.locks.request('hub-cloud-session-refresh',renew):renew()).finally(()=>this.refreshing=null)}return this.refreshing}
  async request(path,opts={}){if(!this.session)throw new Error('请先登录');if(this.session.expires_at*1000<Date.now()+60000)await this.refresh();try{return await this.raw(path,{...opts,token:this.session.access_token})}catch(e){if(e.status!==401)throw e;await this.refresh();return this.raw(path,{...opts,token:this.session.access_token})}}
  async login(email,password){const s=await this.raw('/auth/v1/token?grant_type=password',{method:'POST',body:{email,password}});this.save(s);return s}
  async logout(){try{if(this.session)await this.raw('/auth/v1/logout',{method:'POST',token:this.session.access_token})}finally{this.save(null)}}
