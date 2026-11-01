@@ -2,5 +2,3 @@
 
 
 .batch-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px;background:#f5f8fd;border:1px solid #e1e8f2;border-radius:9px;margin:12px 0}.batch-toolbar label{display:flex;align-items:center;gap:7px;color:#294365}.batch-toolbar input,[data-select-photo]{width:18px;height:18px;vertical-align:middle;cursor:pointer;accent-color:#1261ed}#batch-dialog{max-width:580px}#batch-progress{width:100%;height:18px;accent-color:#1261ed}#batch-status{font-weight:600}#batch-detail{min-height:42px}@media(max-width:760px){.batch-toolbar{gap:10px}.batch-toolbar label{width:100%}.batch-toolbar .primary{flex:1}.batch-toolbar button{font-size:12px}.batch-toolbar .muted{width:100%}}
-
-.danger{background:#c73434;border-color:#c73434;color:white}.danger:hover{background:#a92323;color:white;border-color:#a92323}.danger-text{color:#bc3030!important}.photo-cleanup-toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}#delete-photo-dialog{max-width:520px}
