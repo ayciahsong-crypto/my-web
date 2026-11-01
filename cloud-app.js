@@ -14,7 +14,7 @@ function myPoints(){return points.filter(p=>p.active&&(p.department==='all'||p.d
 function download(blob,name){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000)}
 function showLogin(message='',step='choose'){
  if(message)step='credentials';
- revision++;draft=null;if(typeof resetEmployeeLocation==='function')resetEmployeeLocation();document.body.classList.add('at-entry');document.body.classList.remove('employee-mode');$('#entrance')?.remove();
+ revision++;draft=null;if(typeof resetEmployeeLocation==='function')resetEmployeeLocation();document.body.classList.add('at-entry');document.body.classList.remove('employee-mode','manager-mode');$('#entrance')?.remove();
  const el=document.createElement('section');el.id='entrance';el.className=step==='credentials'?'credential-screen':'choice-screen';
  const brand='<div class="entry-brand company-entry-brand"><img class="company-logo-image" src="assets/zhenru-company-logo.png?v=1" alt="真如物业"></div>';
  if(step==='choose'){
@@ -32,12 +32,13 @@ async function startSession(){
  if(typeof HubAccounts!=='undefined')HubAccounts.remember(me);
  if((portal==='manager')!==(me.role==='manager'))throw new Error(me.role==='manager'?'这是主管账号，请选择管理入口登录。':'这个账号没有管理权限，请选择员工入口登录。');
  [points,plan]=await Promise.all([api.points(),api.settings()]);page=me.role==='manager'?'overview':'inspect';if(me.role==='manager')people=await api.all('inspection_profiles','select=*&order=created_at.asc,id.asc');else people=[];
- pointId=myPoints()[0]?.id||'';document.body.classList.remove('at-entry');$('#entrance')?.remove();document.body.classList.toggle('employee-mode',me.role!=='manager');
+ pointId=myPoints()[0]?.id||'';document.body.classList.remove('at-entry');$('#entrance')?.remove();document.body.classList.toggle('employee-mode',me.role!=='manager');document.body.classList.toggle('manager-mode',me.role==='manager');
  $('#role').textContent=(me.display_name||me.email)+' · '+roleName[me.role]+' ｜退出';$('.aside-bottom').innerHTML='<span class="online"></span> 云端工作空间<small>账号权限由后台校验</small>';
  $('.notice').innerHTML='打卡提示 <span>只有提交成功的记录才计入打卡；统计时间采用北京时间。拍摄／选片时间来自设备，接收时间由服务器记录。</span>';
  configureNav();await reload();
 }
-function configureNav(){const nav=$('nav');nav.innerHTML=me.role==='manager'?'<button data-page="overview">▥　账号打卡汇总</button><button data-page="history">◷　打卡明细与照片</button><button data-page="people">♙　人员与权限</button><button data-page="config">⚙　巡检配置</button>':'<button data-page="inspect">◎　本班巡检</button>';nav.querySelectorAll('button').forEach(b=>b.onclick=()=>go(b.dataset.page))}
+function configureNav(){const nav=$('nav'),items=me.role==='manager'?[['overview','▥','账号打卡汇总'],['history','◷','打卡明细与照片'],['people','♙','人员与权限'],['config','⚙','巡检配置']]:[['inspect','◎','本班巡检']];nav.setAttribute('aria-label','功能导航');nav.innerHTML=items.map(([id,icon,label])=>`<button data-page="${id}"><span class="nav-icon" aria-hidden="true">${icon}　</span><span class="nav-text">${label}</span></button>`).join('');nav.querySelectorAll('button').forEach(b=>b.onclick=()=>go(b.dataset.page))}
+
 async function reload(){if(!me)return;if(batchBusy)return toast('照片打包中，请先完成或取消下载');selectedPhotos.clear();const rev=++revision;loading=true;render();try{
  const q=new URLSearchParams({select:'*',order:'uploaded_at.desc,id.desc'});
  if(me.role==='manager'){q.append('work_date','gte.'+filter.from);q.append('work_date','lte.'+filter.to);if(filter.user)q.set('user_id','eq.'+filter.user);if(filter.role)q.set('job_role','eq.'+filter.role);if(filter.shift)q.set('shift','eq.'+filter.shift)}else{q.set('work_date','eq.'+workDate());q.set('shift','eq.'+shift)}
