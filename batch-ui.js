@@ -27,7 +27,7 @@ async function startBatchDownload(list){
  dialog.addEventListener('cancel',e=>{if(running){e.preventDefault();controller.abort();close.disabled=true;status.textContent='正在取消…'}});dialog.addEventListener('close',()=>dialog.remove(),{once:true});
  try{
   const result=await HubBatch.download(list,{getURL:path=>api.photoURL(path),signal:controller.signal,onProgress:p=>{status.textContent='已处理 '+p.done+' / '+p.total+' 张，成功 '+p.success+' 张，失败 '+p.failed+' 张';progress.value=p.done/p.total*100;detail.textContent='已接收 '+(p.bytes/1024/1024).toFixed(1)+' MB · 正在准备 ZIP'}});
-  progress.value=100;status.textContent='打包完成：成功 '+result.success+' 张，失败 '+result.failed.length+' 张。';detail.textContent=result.failed.length?'失败原因已写入 ZIP 内的“打卡明细.csv”；可以选中失败记录重试。':'ZIP 内含 JPG 照片和打卡明细 CSV，照片按工作日期与人员分文件夹。';
+  progress.value=100;status.textContent='打包完成：成功 '+result.success+' 张，失败 '+result.failed.length+' 张。';detail.textContent=result.failed.length?'部分照片下载失败，可以选中失败记录重试。':'ZIP 内仅包含 JPG 照片，按工作日期与人员分文件夹。';
   save.hidden=false;save.textContent='下载 ZIP（'+result.success+' 张照片）';save.onclick=()=>download(result.blob,'巡检照片_'+range.from+'_'+range.to+'.zip');
   if(result.failed.length){retry.hidden=false;retry.onclick=()=>{selectedPhotos=new Set(result.failed.map(f=>f.record.id));updateBatchSelection();dialog.close()}}
  }catch(e){status.textContent=e.name==='AbortError'?'已取消打包，未生成下载文件。':errorText(e);detail.textContent='云端记录和照片未作更改。可关闭后重新选择或重试。';progress.value=0;
