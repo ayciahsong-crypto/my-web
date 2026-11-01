@@ -16,7 +16,7 @@ function showLogin(message='',step='choose'){
  if(message)step='credentials';
  revision++;draft=null;if(typeof resetEmployeeLocation==='function')resetEmployeeLocation();document.body.classList.add('at-entry');document.body.classList.remove('employee-mode');$('#entrance')?.remove();
  const el=document.createElement('section');el.id='entrance';el.className=step==='credentials'?'credential-screen':'choice-screen';
- const brand='<div class="entry-brand"><img src="assets/xizhan-icon-192-v2.png" alt="" width="52" height="52" style="vertical-align:middle;border-radius:12px;margin-right:12px">西站巡检打卡</div>';
+ const brand='<div class="entry-brand company-entry-brand"><img class="company-logo-image" src="assets/zhenru-company-logo.png?v=1" alt="真如物业"></div>';
  if(step==='choose'){
  el.innerHTML=`<div class="entry-wrap">${brand}<span class="eyebrow">INSPECTION WORKSPACE</span><h1>每一次巡检，都有迹可循</h1><p class="entry-sub">请选择你的工作入口</p><div class="entry-grid"><article><span class="entry-icon">◎</span><h2>保安 / 工程部人员</h2><p>选择轮次，按点位要求拍照或选片，提交巡检记录。</p><button id="worker-portal" class="primary">员工登录 →</button></article><article><span class="entry-icon">▥</span><h2>管理人员</h2><p>查看各账号打卡汇总、现场照片，管理人员与点位。</p><button id="manager-portal">管理登录 →</button></article></div></div>`;
  document.body.append(el);
