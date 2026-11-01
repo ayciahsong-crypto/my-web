@@ -15,7 +15,7 @@ function bindBatchDownloads(){
  $('#download-filtered').onclick=()=>startBatchDownload([...records]);updateBatchSelection();
 }
 async function startBatchDownload(list){
- if(!me||me.role!=='manager'||batchBusy)return;
+ if(!me||me.role!=='manager'||batchBusy||(typeof photoDeleting!=='undefined'&&photoDeleting))return;
  if(!list.length)return toast('请先选择要下载的照片');if(list.length>HubBatch.MAX_FILES)return toast('单次最多500张，请按日期或账号分批选择');
  const range={...filter},controller=new AbortController();let running=true;batchBusy=true;
  $('#batch-dialog')?.remove();const dialog=document.createElement('dialog');dialog.id='batch-dialog';dialog.setAttribute('aria-labelledby','batch-title');
