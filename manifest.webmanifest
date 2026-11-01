@@ -1,0 +1,19 @@
+{
+  "id": "./",
+  "name": "西站巡检打卡",
+  "short_name": "西站巡检打卡",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f3f6fb",
+  "theme_color": "#1261ed",
+  "icons": [
+    {
+      "src": "assets/xizhan-icon.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
