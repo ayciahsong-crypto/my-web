@@ -6,7 +6,6 @@ globalThis.HubBatch=(()=>{
  function crc32(bytes){let c=0xffffffff;for(const b of bytes)c=table[(c^b)&255]^(c>>>8);return (c^0xffffffff)>>>0}
  function safe(value){return String(value??'').replace(/[\\/:*?"<>|\x00-\x1f]/g,'_').replace(/\.+$/,'').slice(0,65)||'未命名'}
  function filename(r,i){return safe(r.work_date)+'/'+safe(r.employee_name)+'_'+safe(r.user_id).slice(0,8)+'/'+String(i+1).padStart(4,'0')+'_'+safe(r.shift)+'_第'+r.round_no+'轮_'+safe(r.point_name)+'_'+safe(r.id).slice(0,8)+'.jpg'}
- function csv(rows){return '\ufeff'+rows.map(row=>row.map(v=>'"'+String(v??'').replace(/^[\s]*[=+@-]/,"'$&").replaceAll('"','""')+'"').join(',')).join('\r\n')}
  function zip(files){const encoder=new TextEncoder(),local=[],central=[];let offset=0;const block=n=>{const bytes=new Uint8Array(n);return {bytes,v:new DataView(bytes.buffer)}};
   for(const f of files){const name=encoder.encode(f.name),bytes=f.bytes,c=crc32(bytes),l=block(30),d=block(46);l.v.setUint32(0,0x04034b50,true);l.v.setUint16(4,20,true);l.v.setUint16(6,0x800,true);l.v.setUint16(12,33,true);l.v.setUint32(14,c,true);l.v.setUint32(18,bytes.length,true);l.v.setUint32(22,bytes.length,true);l.v.setUint16(26,name.length,true);
    d.v.setUint32(0,0x02014b50,true);d.v.setUint16(4,20,true);d.v.setUint16(6,20,true);d.v.setUint16(8,0x800,true);d.v.setUint16(14,33,true);d.v.setUint32(16,c,true);d.v.setUint32(20,bytes.length,true);d.v.setUint32(24,bytes.length,true);d.v.setUint16(28,name.length,true);d.v.setUint32(42,offset,true);local.push(l.bytes,name,bytes);central.push(d.bytes,name);offset+=30+name.length+bytes.length;
@@ -27,11 +26,8 @@ globalThis.HubBatch=(()=>{
    onProgress({done:i+1,total:records.length,success:files.length,failed:results.filter(r=>!r.ok).length,bytes:totalBytes});
    await new Promise(resolve=>setTimeout(resolve,0));
   }
-  check(signal);if(!files.length)throw new Error('没有照片下载成功，请检查网络及账号权限后重试');const encoder=new TextEncoder();
-  const rows=[['记录ID','姓名','账号ID','岗位','工作日期','班次','轮次','点位','拍摄时间（设备）','接收时间（服务器）','备注','下载状态','文件路径','失败原因'],...results.map(({record:r,name,ok,error})=>[r.id,r.employee_name,r.user_id,r.job_role==='security'?'保安':'工程部',r.work_date,r.shift,r.round_no,r.point_name,r.captured_at,r.uploaded_at,r.note,ok?'成功':'失败',name,error||''])];
-  files.push({name:'打卡明细.csv',bytes:encoder.encode(csv(rows))});files.push({name:'下载说明.txt',bytes:encoder.encode('成功照片：'+results.filter(r=>r.ok).length+' 张\r\n失败照片：'+results.filter(r=>!r.ok).length+' 张\r\n照片按工作日期、人员分文件夹保存。详细记录和失败原因见打卡明细.csv。拍摄时间来自设备，接收时间来自服务器。\r\n导出时间：'+new Date().toISOString())});
-  check(signal);return {blob:zip(files),success:results.filter(r=>r.ok).length,failed:results.filter(r=>!r.ok),totalBytes};
+  check(signal);if(!files.length)throw new Error('没有照片下载成功，请检查网络及账号权限后重试');check(signal);return {blob:zip(files),success:results.filter(r=>r.ok).length,failed:results.filter(r=>!r.ok),totalBytes};
  }
- return {download,zip,filename,csv,MAX_FILES,MAX_BYTES};
+ return {download,zip,filename,MAX_FILES,MAX_BYTES};
 })();
 
