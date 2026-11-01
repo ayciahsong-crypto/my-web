@@ -24,10 +24,12 @@ function showLogin(message='',step='choose'){
  }
  el.innerHTML=`<div class="entry-wrap credential-wrap">${brand}<button id="back-to-portals" class="text-btn">← 返回选择入口</button><form id="login-form" class="card login-card"><span class="eyebrow">${portal==='manager'?'管理人员入口':'保安 / 工程部人员入口'}</span><h1 class="credential-title">${portal==='manager'?'管理人员':'员工'}账号登录</h1><p class="muted">使用你的个人账号登录工作台</p><label>邮箱<input id="email" type="email" required autocomplete="username" placeholder="管理员为你创建的邮箱账号"></label><label>密码<input id="password" type="password" required autocomplete="current-password" placeholder="请输入密码"></label><div id="login-error" class="form-error" role="alert">${esc(message)}</div><button class="primary" id="login-submit" type="submit">登录工作台 →</button><p class="muted">账号由项目管理员创建并分配角色。</p></form></div>`;document.body.append(el);
  $('#back-to-portals').onclick=()=>showLogin();
+ if(typeof bindAccountSuggestions==='function')bindAccountSuggestions(portal);
  $('#login-form').onsubmit=async e=>{e.preventDefault();const email=$('#email').value.trim(),password=$('#password').value;$('#login-submit').disabled=true;$('#back-to-portals').disabled=true;$('#login-error').textContent='正在验证账号…';try{await api.login(email,password);await startSession();}catch(err){me=null;try{await api.logout()}catch{}showLogin(errorText(err),'credentials')}};
 }
 async function startSession(){
- me=await api.profile();if(!me.active||me.role==='pending'){const m=!me.active?'账号已停用，请联系项目主管。':'账号尚未分配岗位，请联系项目主管审批。';me=null;await api.logout();showLogin(m);return}
+ me=await api.profile();if(!me.active||me.role==='pending'){const m=!me.active?'账号已停用，请联系项目主管。':'账号尚未分配岗位，请联系项目主管审批。';if(typeof HubAccounts!=='undefined')HubAccounts.forget(me.email);me=null;await api.logout();showLogin(m);return}
+ if(typeof HubAccounts!=='undefined')HubAccounts.remember(me);
  if((portal==='manager')!==(me.role==='manager'))throw new Error(me.role==='manager'?'这是主管账号，请选择管理入口登录。':'这个账号没有管理权限，请选择员工入口登录。');
  [points,plan]=await Promise.all([api.points(),api.settings()]);page=me.role==='manager'?'overview':'inspect';if(me.role==='manager')people=await api.all('inspection_profiles','select=*&order=created_at.asc,id.asc');else people=[];
  pointId=myPoints()[0]?.id||'';document.body.classList.remove('at-entry');$('#entrance')?.remove();document.body.classList.toggle('employee-mode',me.role!=='manager');
